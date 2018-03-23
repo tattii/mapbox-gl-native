@@ -65,7 +65,7 @@ OfflineRegionStatus OfflineDownload::getStatus() const {
     OfflineRegionStatus result = offlineDatabase.getRegionCompletedStatus(id);
 
     result.requiredResourceCount++;
-    optional<Response> styleResponse = offlineDatabase.get(Resource::style(definition.styleURL));
+    optional<Response> styleResponse = offlineDatabase.get(Resource::style(definition.match([](auto& reg){ return reg.styleURL; })));
     if (!styleResponse) {
         return result;
     }
@@ -81,7 +81,8 @@ OfflineRegionStatus OfflineDownload::getStatus() const {
         auto handleTiledSource = [&] (const variant<std::string, Tileset>& urlOrTileset, const uint16_t tileSize) {
             if (urlOrTileset.is<Tileset>()) {
                 result.requiredResourceCount +=
-                    definition.tileCount(type, tileSize, urlOrTileset.get<Tileset>().zoomRange);
+                        definition.match([&](auto& def){ return def.tileCount(type, tileSize, urlOrTileset.get<Tileset>().zoomRange); });
+                    ;
             } else {
                 result.requiredResourceCount += 1;
                 const auto& url = urlOrTileset.get<std::string>();
@@ -91,7 +92,8 @@ OfflineRegionStatus OfflineDownload::getStatus() const {
                     optional<Tileset> tileset = style::conversion::convertJSON<Tileset>(*sourceResponse->data, error);
                     if (tileset) {
                         result.requiredResourceCount +=
-                            definition.tileCount(type, tileSize, (*tileset).zoomRange);
+                                definition.match([&](auto& def){ return def.tileCount(type, tileSize, (*tileset).zoomRange); });
+
                     }
                 } else {
                     result.requiredResourceCountIsPrecise = false;
@@ -156,7 +158,7 @@ void OfflineDownload::activateDownload() {
     status = OfflineRegionStatus();
     status.downloadState = OfflineRegionDownloadState::Active;
     status.requiredResourceCount++;
-    ensureResource(Resource::style(definition.styleURL), [&](Response styleResponse) {
+    ensureResource(Resource::style(definition.match([](auto& reg){ return reg.styleURL; })), [&](Response styleResponse) {
         status.requiredResourceCountIsPrecise = true;
 
         style::Parser parser;
@@ -242,8 +244,9 @@ void OfflineDownload::activateDownload() {
         }
 
         if (!parser.spriteURL.empty()) {
-            queueResource(Resource::spriteImage(parser.spriteURL, definition.pixelRatio));
-            queueResource(Resource::spriteJSON(parser.spriteURL, definition.pixelRatio));
+            auto pixelRatio = definition.match([](auto& reg){ return reg.pixelRatio; });
+            queueResource(Resource::spriteImage(parser.spriteURL, pixelRatio));
+            queueResource(Resource::spriteJSON(parser.spriteURL, pixelRatio));
         }
 
         continueDownload();
@@ -291,10 +294,10 @@ void OfflineDownload::queueResource(Resource resource) {
 }
 
 void OfflineDownload::queueTiles(SourceType type, uint16_t tileSize, const Tileset& tileset) {
-    for (const auto& tile : definition.tileCover(type, tileSize, tileset.zoomRange)) {
+    for (const auto& tile : definition.match([&](auto& def){ return def.tileCover(type, tileSize, tileset.zoomRange); })) {
         status.requiredResourceCount++;
         resourcesRemaining.push_back(
-            Resource::tile(tileset.tiles[0], definition.pixelRatio, tile.x, tile.y, tile.z, tileset.scheme));
+            Resource::tile(tileset.tiles[0], definition.match([](auto& def){ return def.pixelRatio; }), tile.x, tile.y, tile.z, tileset.scheme));
     }
 }
 
