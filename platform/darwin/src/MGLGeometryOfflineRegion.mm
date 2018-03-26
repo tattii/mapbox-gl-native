@@ -1,19 +1,22 @@
-#import "MGLTilePyramidOfflineRegion.h"
+#import "MGLGeometryOfflineRegion.h"
 
 #if !TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR
     #import <Cocoa/Cocoa.h>
+#else
+    #import <UIKit/UIKit.h>
 #endif
 
 #import "MGLOfflineRegion_Private.h"
-#import "MGLTilePyramidOfflineRegion_Private.h"
-#import "MGLGeometry_Private.h"
+#import "MGLGeometryOfflineRegion_Private.h"
+#import "MGLFeature_Private.h"
+#import "MGLShape_Private.h"
 #import "MGLStyle.h"
 
-@interface MGLTilePyramidOfflineRegion () <MGLOfflineRegion_Private, MGLTilePyramidOfflineRegion_Private>
+@interface MGLGeometryOfflineRegion () <MGLOfflineRegion_Private, MGLGeometryOfflineRegion_Private>
 
 @end
 
-@implementation MGLTilePyramidOfflineRegion {
+@implementation MGLGeometryOfflineRegion {
     NSURL *_styleURL;
 }
 
@@ -26,12 +29,12 @@
 - (instancetype)init {
     [NSException raise:@"Method unavailable"
                 format:
-     @"-[MGLTilePyramidOfflineRegion init] is unavailable. "
+     @"-[MGLGeometryOfflineRegion init] is unavailable. "
      @"Use -initWithStyleURL:bounds:fromZoomLevel:toZoomLevel: instead."];
     return nil;
 }
 
-- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel {
+- (instancetype)initWithStyleURL:(NSURL *)styleURL geometry:(MGLShape *)geometry fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel {
     if (self = [super init]) {
         if (!styleURL) {
             styleURL = [MGLStyle streetsStyleURLWithVersion:MGLStyleDefaultVersion];
@@ -47,17 +50,17 @@
         }
 
         _styleURL = styleURL;
-        _bounds = bounds;
+        _geometry = geometry;
         _minimumZoomLevel = minimumZoomLevel;
         _maximumZoomLevel = maximumZoomLevel;
     }
     return self;
 }
 
-- (instancetype)initWithOfflineRegionDefinition:(const mbgl::OfflineTilePyramidRegionDefinition &)definition {
+- (instancetype)initWithOfflineRegionDefinition:(const mbgl::OfflineGeometryRegionDefinition &)definition {
     NSURL *styleURL = [NSURL URLWithString:@(definition.styleURL.c_str())];
-    MGLCoordinateBounds bounds = MGLCoordinateBoundsFromLatLngBounds(definition.bounds);
-    return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom];
+    MGLShape *geometry = MGLShapeFromGeoJSON(definition.geometry);
+    return [self initWithStyleURL:styleURL geometry:geometry fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom];
 }
 
 - (const mbgl::OfflineRegionDefinition)offlineRegionDefinition {
@@ -66,38 +69,31 @@
 #elif TARGET_OS_MAC
     const float scaleFactor = [NSScreen mainScreen].backingScaleFactor;
 #endif
-    return mbgl::OfflineTilePyramidRegionDefinition(_styleURL.absoluteString.UTF8String,
-                                                    MGLLatLngBoundsFromCoordinateBounds(_bounds),
-                                                    _minimumZoomLevel, _maximumZoomLevel,
-                                                    scaleFactor);
+    return mbgl::OfflineGeometryRegionDefinition(_styleURL.absoluteString.UTF8String,
+                                                 _geometry.geometryObject,
+                                                 _minimumZoomLevel, _maximumZoomLevel,
+                                                 scaleFactor);
 }
 
 - (nullable instancetype)initWithCoder:(NSCoder *)coder {
     NSURL *styleURL = [coder decodeObjectForKey:@"styleURL"];
-    CLLocationCoordinate2D sw = CLLocationCoordinate2DMake([coder decodeDoubleForKey:@"southWestLatitude"],
-                                                           [coder decodeDoubleForKey:@"southWestLongitude"]);
-    CLLocationCoordinate2D ne = CLLocationCoordinate2DMake([coder decodeDoubleForKey:@"northEastLatitude"],
-                                                           [coder decodeDoubleForKey:@"northEastLongitude"]);
-    MGLCoordinateBounds bounds = MGLCoordinateBoundsMake(sw, ne);
+    MGLShape * geometry = [coder decodeObjectForKey:@"geometry"];
     double minimumZoomLevel = [coder decodeDoubleForKey:@"minimumZoomLevel"];
     double maximumZoomLevel = [coder decodeDoubleForKey:@"maximumZoomLevel"];
 
-    return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:minimumZoomLevel toZoomLevel:maximumZoomLevel];
+    return [self initWithStyleURL:styleURL geometry:geometry fromZoomLevel:minimumZoomLevel toZoomLevel:maximumZoomLevel];
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
 {
     [coder encodeObject:_styleURL forKey:@"styleURL"];
-    [coder encodeDouble:_bounds.sw.latitude forKey:@"southWestLatitude"];
-    [coder encodeDouble:_bounds.sw.longitude forKey:@"southWestLongitude"];
-    [coder encodeDouble:_bounds.ne.latitude forKey:@"northEastLatitude"];
-    [coder encodeDouble:_bounds.ne.longitude forKey:@"northEastLongitude"];
+    [coder encodeObject:_geometry forKey:@"geometry"];
     [coder encodeDouble:_maximumZoomLevel forKey:@"maximumZoomLevel"];
     [coder encodeDouble:_minimumZoomLevel forKey:@"minimumZoomLevel"];
 }
 
 - (id)copyWithZone:(nullable NSZone *)zone {
-    return [[[self class] allocWithZone:zone] initWithStyleURL:_styleURL bounds:_bounds fromZoomLevel:_minimumZoomLevel toZoomLevel:_maximumZoomLevel];
+    return [[[self class] allocWithZone:zone] initWithStyleURL:_styleURL geometry:_geometry fromZoomLevel:_minimumZoomLevel toZoomLevel:_maximumZoomLevel];
 }
 
 - (BOOL)isEqual:(id)other {
@@ -108,17 +104,16 @@
         return NO;
     }
 
-    MGLTilePyramidOfflineRegion *otherRegion = other;
+    MGLGeometryOfflineRegion *otherRegion = other;
     return (_minimumZoomLevel == otherRegion->_minimumZoomLevel
             && _maximumZoomLevel == otherRegion->_maximumZoomLevel
-            && MGLCoordinateBoundsEqualToCoordinateBounds(_bounds, otherRegion->_bounds)
+            && _geometry.geometryObject == otherRegion->_geometry.geometryObject
             && [_styleURL isEqual:otherRegion->_styleURL]);
 }
 
 - (NSUInteger)hash {
     return (_styleURL.hash
-            + @(_bounds.sw.latitude).hash + @(_bounds.sw.longitude).hash
-            + @(_bounds.ne.latitude).hash + @(_bounds.ne.longitude).hash
+            + _geometry.hash
             + @(_minimumZoomLevel).hash + @(_maximumZoomLevel).hash);
 }
 

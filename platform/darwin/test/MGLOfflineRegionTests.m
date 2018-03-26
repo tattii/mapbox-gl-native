@@ -17,7 +17,7 @@
     XCTAssertThrowsSpecificNamed([[MGLTilePyramidOfflineRegion alloc] initWithStyleURL:localURL bounds:bounds fromZoomLevel:0 toZoomLevel:DBL_MAX], NSException, @"Invalid style URL", @"No exception raised when initializing region with a local file URL as the style URL.");
 }
 
-- (void)testEquality {
+- (void)testTilePyramidRegionEquality {
     MGLCoordinateBounds bounds = MGLCoordinateBoundsMake(kCLLocationCoordinate2DInvalid, kCLLocationCoordinate2DInvalid);
     MGLTilePyramidOfflineRegion *original = [[MGLTilePyramidOfflineRegion alloc] initWithStyleURL:[MGLStyle lightStyleURLWithVersion:MGLStyleDefaultVersion] bounds:bounds fromZoomLevel:5 toZoomLevel:10];
     MGLTilePyramidOfflineRegion *copy = [original copy];
@@ -25,6 +25,22 @@
 
     XCTAssertEqualObjects(original.styleURL, copy.styleURL, @"Style URL has changed.");
     XCTAssert(MGLCoordinateBoundsEqualToCoordinateBounds(original.bounds, copy.bounds), @"Bounds have changed.");
+    XCTAssertEqual(original.minimumZoomLevel, original.minimumZoomLevel, @"Minimum zoom level has changed.");
+    XCTAssertEqual(original.maximumZoomLevel, original.maximumZoomLevel, @"Maximum zoom level has changed.");
+}
+
+- (void)testGeometryRegionEquality {
+    NSString *geojson = @"{\"type\": \"Point\", \"coordinates\": [-3.8671874999999996, 52.482780222078226] }";
+    NSError *error;
+    MGLShape *geometry = [MGLShape shapeWithData: [geojson dataUsingEncoding:NSUTF8StringEncoding] encoding: NSUTF8StringEncoding error:&error];
+    XCTAssertNil(error);
+    
+    MGLGeometryOfflineRegion *original = [[MGLGeometryOfflineRegion alloc] initWithStyleURL:[MGLStyle lightStyleURLWithVersion:MGLStyleDefaultVersion] geometry:geometry fromZoomLevel:5 toZoomLevel:10];
+    MGLGeometryOfflineRegion *copy = [original copy];
+    XCTAssertEqualObjects(original, copy, @"Geometry region should be equal to its copy.");
+    
+    XCTAssertEqualObjects(original.styleURL, copy.styleURL, @"Style URL has changed.");
+    XCTAssertEqualObjects(original.geometry, copy.geometry, @"Geometry has changed.");
     XCTAssertEqual(original.minimumZoomLevel, original.minimumZoomLevel, @"Minimum zoom level has changed.");
     XCTAssertEqual(original.maximumZoomLevel, original.maximumZoomLevel, @"Maximum zoom level has changed.");
 }
