@@ -8,6 +8,12 @@ Mapbox welcomes participation and contributions from everyone. Please read [CONT
 
 * Deprecated `+[NSExpression featurePropertiesVariableExpression]` use `+[NSExpression featureAttributesVariableExpression]` instead. ([#11748](https://github.com/mapbox/mapbox-gl-native/pull/11748))
 
+### Other changes
+
+* Adjusted when and how the camera transition update and finish callbacks are called, fixing recursion bugs. ([#5833](https://github.com/mapbox/mapbox-gl-native/issues/5833), [#11180](https://github.com/mapbox/mapbox-gl-native/issues/11180))
+
+
+
 ## 4.0.0 - April 19, 2018
 
 The 4.0._x_ series of releases will be the last to support iOS 8. The minimum iOS deployment version will increase to iOS 9.0 in a future release.
