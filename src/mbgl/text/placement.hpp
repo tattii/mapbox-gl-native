@@ -55,7 +55,7 @@ struct RetainedQueryData {
                       std::shared_ptr<FeatureIndex> featureIndex_,
                       OverscaledTileID tileID_)
         : bucketInstanceId(bucketInstanceId_)
-        , featureIndex(featureIndex_)
+        , featureIndex(std::move(featureIndex_))
         , tileID(std::move(tileID_)) {}
 };
     
