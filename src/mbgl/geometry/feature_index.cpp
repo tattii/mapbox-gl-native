@@ -76,9 +76,10 @@ std::unordered_map<std::string, std::vector<Feature>> FeatureIndex::lookupSymbol
                                                                                          const RenderedQueryOptions& queryOptions,
                                                                                          const std::vector<const RenderLayer*>& layers,
                                                                                          const OverscaledTileID& tileID,
-                                                                                         const std::shared_ptr<std::vector<size_t>>& featureSortOrder) const {
+                                                                                        const std::shared_ptr<std::vector<size_t>>& featureSortOrder) const {
+    std::unordered_map<std::string, std::vector<Feature>> result;
     if (!tileData) {
-        return {};
+        return result;
     }
     std::vector<IndexedSubfeature> sortedFeatures(symbolFeatures.begin(), symbolFeatures.end());
 
@@ -102,7 +103,7 @@ std::unordered_map<std::string, std::vector<Feature>> FeatureIndex::lookupSymbol
             return a.sortIndex > b.sortIndex;
         }
     });
-    std::unordered_map<std::string, std::vector<Feature>> result;
+
     for (const auto& symbolFeature : sortedFeatures) {
         addFeature(result, symbolFeature, queryOptions, tileID.canonical, layers, GeometryCoordinates(), 0, 0);
     }
