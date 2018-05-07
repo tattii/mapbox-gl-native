@@ -14,7 +14,7 @@ namespace mbgl {
 class Tileset {
 public:
     enum class Scheme : bool { XYZ, TMS };
-    enum class DEMEncoding : bool { Mapbox, Terrarium };
+    enum class DEMEncoding : int { Mapbox, Terrarium, Gsi };
 
     std::vector<std::string> tiles;
     Range<uint8_t> zoomRange;

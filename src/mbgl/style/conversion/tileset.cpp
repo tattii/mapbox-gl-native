@@ -45,6 +45,8 @@ optional<Tileset> Converter<Tileset>::operator()(const Convertible& value, Error
         optional<std::string> encoding = toString(*encodingValue);
         if (encoding && *encoding == "terrarium") {
             result.encoding = Tileset::DEMEncoding::Terrarium;
+        } else if (encoding && *encoding != "gsi") {
+            result.encoding = Tileset::DEMEncoding::Gsi;
         } else if (encoding && *encoding != "mapbox") {
             error = { "invalid raster-dem encoding type - valid types are 'mapbox' and 'terrarium' " };
         }

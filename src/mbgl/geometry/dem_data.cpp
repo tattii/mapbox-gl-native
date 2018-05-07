@@ -23,7 +23,19 @@ DEMData::DEMData(const PremultipliedImage& _image, Tileset::DEMEncoding encoding
         return ((r * 256 + g + b / 256) - 32768);
     };
 
-    auto decodeRGB = encoding == Tileset::DEMEncoding::Terrarium ? decodeTerrarium : decodeMapbox;
+    auto decodeGsi = [] (const uint8_t r, const uint8_t g, const uint8_t b){
+        // http://maps.gsi.go.jp/development/demtile.html
+        // int24 complement
+        // sea surface = NA (2 ^ 23)
+        int32_t h = r * 256 * 256 + g * 256 + b;
+        return (h == std::pow(2, 23)) ? 0
+            : (h < std::pow(2, 23)) ? h / 100
+            : 0; //* (double ~(h - 1));
+    };
+
+    auto decodeRGB = encoding == Tileset::DEMEncoding::Terrarium ? decodeTerrarium 
+        : encoding == Tileset::DEMEncoding::Gsi ? decodeGsi
+        : decodeMapbox;
 
     std::memset(image.data.get(), 0, image.bytes());
 
