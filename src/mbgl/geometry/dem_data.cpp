@@ -29,8 +29,8 @@ DEMData::DEMData(const PremultipliedImage& _image, Tileset::DEMEncoding encoding
         // sea surface = NA (2 ^ 23)
         int32_t h = r * 256 * 256 + g * 256 + b;
         return (h == std::pow(2, 23)) ? 0
-            : (h < std::pow(2, 23)) ? h / 100
-            : 0; //* (double ~(h - 1));
+            : (h < std::pow(2, 23)) ? (int) h / 100
+            : (int) (h - std::pow(2, 24)) / 100;
     };
 
     auto decodeRGB = encoding == Tileset::DEMEncoding::Terrarium ? decodeTerrarium 
