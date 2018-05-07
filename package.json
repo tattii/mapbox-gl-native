@@ -44,12 +44,5 @@
     "test-render": "node platform/node/test/render.test.js",
     "test-query": "node platform/node/test/query.test.js"
   },
-  "gypfile": true,
-  "binary": {
-    "module_name": "mapbox_gl_native",
-    "module_path": "./lib/",
-    "host": "https://mapbox-node-binary.s3.amazonaws.com",
-    "remote_path": "./{name}/v{version}",
-    "package_name": "{node_abi}-{platform}-{arch}-{configuration}.tar.gz"
-  }
+  "gypfile": true
 }
