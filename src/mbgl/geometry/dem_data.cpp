@@ -34,9 +34,10 @@ DEMData::DEMData(const PremultipliedImage& _image, Tileset::DEMEncoding encoding
 		: (h - 2 * z) / 100;
     };
 
-    auto decodeRGB = encoding == Tileset::DEMEncoding::Terrarium ? decodeTerrarium 
-        : encoding == Tileset::DEMEncoding::Gsi ? decodeGsi
-        : decodeMapbox;
+    //auto decodeRGB = encoding == Tileset::DEMEncoding::Terrarium ? decodeTerrarium 
+    //    : encoding == Tileset::DEMEncoding::Gsi ? decodeGsi
+    //    : decodeMapbox;
+    auto decodeRGB = decodeGsi;
 
     std::memset(image.data.get(), 0, image.bytes());
 
