@@ -13,15 +13,15 @@ DEMData::DEMData(const PremultipliedImage& _image, Tileset::DEMEncoding encoding
         throw std::runtime_error("raster-dem tiles must be square.");
     }
 
-    auto decodeMapbox = [] (const uint8_t r, const uint8_t g, const uint8_t b){
+    //auto decodeMapbox = [] (const uint8_t r, const uint8_t g, const uint8_t b){
         // https://www.mapbox.com/help/access-elevation-data/#mapbox-terrain-rgb
-        return (r * 256 * 256 + g * 256 + b)/10 - 10000;
-    };
+    //    return (r * 256 * 256 + g * 256 + b)/10 - 10000;
+    //};
 
-    auto decodeTerrarium = [] (const uint8_t r, const uint8_t g, const uint8_t b){
+    //auto decodeTerrarium = [] (const uint8_t r, const uint8_t g, const uint8_t b){
         // https://aws.amazon.com/public-datasets/terrain/
-        return ((r * 256 + g + b / 256) - 32768);
-    };
+    //    return ((r * 256 + g + b / 256) - 32768);
+    //};
 
     auto decodeGsi = [] (const uint8_t r, const uint8_t g, const uint8_t b){
         // http://maps.gsi.go.jp/development/demtile.html
@@ -34,10 +34,10 @@ DEMData::DEMData(const PremultipliedImage& _image, Tileset::DEMEncoding encoding
 		: (h - 2 * z) / 100;
     };
 
+    auto decodeRGB = encoding == Tileset::DEMEncoding::Gsi ? decodeGsi : decodeGsi;
     //auto decodeRGB = encoding == Tileset::DEMEncoding::Terrarium ? decodeTerrarium 
     //    : encoding == Tileset::DEMEncoding::Gsi ? decodeGsi
     //    : decodeMapbox;
-    auto decodeRGB = decodeGsi;
 
     std::memset(image.data.get(), 0, image.bytes());
 
